@@ -11,8 +11,9 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await (notion as any).search({ page_size: 100 });
 
-    const dbs = (result.results as Array<{ id: string; object: string; title?: Array<{ plain_text: string }> }>)
-      .filter((r) => r.object === 'database');
+    const all = result.results as Array<{ id: string; object: string; title?: Array<{ plain_text: string }> }>;
+    const dbs = all.filter((r) => r.object === 'database');
+    const pages = all.filter((r) => r.object === 'page');
 
     const dbTitles = dbs.map((db) => db.title?.map((t) => t.plain_text).join('') ?? '(제목 없음)');
 
@@ -22,12 +23,13 @@ export async function POST(request: NextRequest) {
     const recordsDb = find('독서기록');
 
     if (!notesDb || !recordsDb) {
-      const found = dbTitles.length > 0
-        ? `통합이 접근 가능한 DB: ${dbTitles.join(', ')}`
-        : '통합이 접근 가능한 DB가 없습니다.';
       const missing = [!notesDb && '독서노트', !recordsDb && '독서기록'].filter(Boolean).join(', ');
+      const summary = [
+        `검색 결과 총 ${all.length}개 (DB ${dbs.length}개, 페이지 ${pages.length}개)`,
+        dbs.length > 0 ? `찾은 DB: ${dbTitles.join(', ')}` : 'DB 없음',
+      ].join(' / ');
       return NextResponse.json({
-        error: `'${missing}' DB를 찾을 수 없습니다. ${found}. Notion에서 해당 DB에 통합을 연결해주세요. (DB 열기 → … → 연결 → 통합 추가)`,
+        error: `'${missing}' DB를 찾을 수 없습니다. [${summary}] — 해당 DB 페이지를 열고 … → 연결 → 통합 추가 를 해주세요.`,
       }, { status: 404 });
     }
 
