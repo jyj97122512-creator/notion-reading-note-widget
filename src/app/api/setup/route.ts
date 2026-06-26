@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createNotionClient } from '@/lib/notion';
 
 export async function POST(request: NextRequest) {
@@ -13,13 +13,23 @@ export async function POST(request: NextRequest) {
 
     const dbs = (result.results as Array<{ id: string; object: string; title?: Array<{ plain_text: string }> }>)
       .filter((r) => r.object === 'database');
+
+    const dbTitles = dbs.map((db) => db.title?.map((t) => t.plain_text).join('') ?? '(제목 없음)');
+
     const find = (name: string) => dbs.find((db) => db.title?.some((t) => t.plain_text.includes(name)));
 
     const notesDb = find('독서노트');
     const recordsDb = find('독서기록');
 
-    if (!notesDb) return NextResponse.json({ error: "'독서노트' DB를 찾을 수 없습니다. 통합이 해당 DB에 연결되어 있는지 확인하세요." }, { status: 404 });
-    if (!recordsDb) return NextResponse.json({ error: "'독서기록' DB를 찾을 수 없습니다. 통합이 해당 DB에 연결되어 있는지 확인하세요." }, { status: 404 });
+    if (!notesDb || !recordsDb) {
+      const found = dbTitles.length > 0
+        ? `통합이 접근 가능한 DB: ${dbTitles.join(', ')}`
+        : '통합이 접근 가능한 DB가 없습니다.';
+      const missing = [!notesDb && '독서노트', !recordsDb && '독서기록'].filter(Boolean).join(', ');
+      return NextResponse.json({
+        error: `'${missing}' DB를 찾을 수 없습니다. ${found}. Notion에서 해당 DB에 통합을 연결해주세요. (DB 열기 → … → 연결 → 통합 추가)`,
+      }, { status: 404 });
+    }
 
     return NextResponse.json({
       notesDatabaseId: notesDb.id.replace(/-/g, ''),

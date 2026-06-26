@@ -25,14 +25,17 @@ function WidgetContent() {
 
   useEffect(() => {
     const c = searchParams.get('c');
-    const queryConfig = c ? decodeEmbedParam(c) : null;
-    if (queryConfig) {
-      saveConfig(queryConfig);
-      history.replaceState(null, '', window.location.pathname);
-      setConfig(queryConfig);
-    } else {
-      setConfig(loadConfig());
+    if (c) {
+      const queryConfig = decodeEmbedParam(c);
+      if (queryConfig) {
+        // ?c= param present and valid — use it directly, no localStorage needed
+        setConfig(queryConfig);
+        setReady(true);
+        return;
+      }
     }
+    // No URL param — fall back to localStorage (used after manual setup)
+    setConfig(loadConfig());
     setReady(true);
   }, [searchParams]);
 
@@ -56,7 +59,7 @@ function WidgetContent() {
     setSyncStatus('saving');
     try {
       const memo = await client.createMemo({ text, type, bookId: selectedBookId });
-      setMemos((c) => [...c, memo]);
+      setMemos((prev) => [...prev, memo]);
       setSyncStatus('idle'); setStatusMessage('저장됨');
       return true;
     } catch (err) {
@@ -70,7 +73,7 @@ function WidgetContent() {
     setDraggedMemoId(null);
     try {
       const updated = await client.linkMemoToBook({ memoId: draggedMemoId, bookId });
-      setMemos((c) => c.map((m) => m.id === updated.id ? updated : m));
+      setMemos((prev) => prev.map((m) => m.id === updated.id ? updated : m));
     } catch (err) {
       setSyncStatus('error'); setStatusMessage(err instanceof Error ? err.message : '연결 실패');
     }
@@ -79,7 +82,7 @@ function WidgetContent() {
   if (!ready) return null;
 
   if (!config) {
-    return <SetupScreen onDone={() => setConfig(loadConfig())} />;
+    return <SetupScreen onDone={() => { saveConfig(loadConfig()!); setConfig(loadConfig()); }} />;
   }
 
   const selectedBookTitle = selectedBookId ? books.find((b) => b.id === selectedBookId)?.title : 'All Notes';
