@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from "react";
 import { saveConfig, DEFAULT_CONFIG, buildEmbedUrl, type WidgetConfig } from "../config";
 
@@ -5,62 +7,77 @@ interface Props {
   onDone: () => void;
 }
 
-type Step = "input" | "embed";
+type Step = "input" | "manual" | "embed";
 
 export function SetupScreen({ onDone }: Props) {
   const [step, setStep] = useState<Step>("input");
   const [token, setToken] = useState("");
+  const [notesDatabaseId, setNotesDatabaseId] = useState("");
+  const [recordsDatabaseId, setRecordsDatabaseId] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function finalize(config: WidgetConfig) {
+    saveConfig(config);
+    setEmbedUrl(buildEmbedUrl(config));
+    setStep("embed");
+  }
+
+  async function handleAuto(e: React.FormEvent) {
     e.preventDefault();
     const t = token.trim();
     if (!t) { setError("Notion 통합 토큰을 입력하세요."); return; }
-
-    setStatus("loading");
-    setError("");
-
+    setStatus("loading"); setError("");
     try {
-      const res = await fetch("/api/setup", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${t}` }
-      });
-
-      if (!res.ok) {
-        setError(await res.text());
-        setStatus("error");
-        return;
-      }
-
-      const { notesDatabaseId, recordsDatabaseId } = await res.json() as {
-        notesDatabaseId: string;
-        recordsDatabaseId: string;
-      };
-
-      const config: WidgetConfig = {
-        token: t,
-        notesDatabaseId,
-        recordsDatabaseId,
-        ...DEFAULT_CONFIG
-      };
-      saveConfig(config);
-      setEmbedUrl(buildEmbedUrl(config));
-      setStatus("idle");
-      setStep("embed");
+      const res = await fetch("/api/setup", { method: "POST", headers: { "Authorization": `Bearer ${t}` } });
+      const data = await res.json() as { notesDatabaseId?: string; recordsDatabaseId?: string; error?: string };
+      if (!res.ok) { setError(data.error ?? "오류가 발생했습니다."); setStatus("error"); return; }
+      finalize({ token: t, notesDatabaseId: data.notesDatabaseId!, recordsDatabaseId: data.recordsDatabaseId!, ...DEFAULT_CONFIG });
     } catch {
-      setError("네트워크 오류가 발생했습니다.");
-      setStatus("error");
+      setError("네트워크 오류가 발생했습니다."); setStatus("error");
     }
+  }
+
+  function handleManual(e: React.FormEvent) {
+    e.preventDefault();
+    const t = token.trim();
+    const n = notesDatabaseId.trim().replace(/-/g, "");
+    const r = recordsDatabaseId.trim().replace(/-/g, "");
+    if (!t) { setError("Notion 통합 토큰을 입력하세요."); return; }
+    if (!n) { setError("독서노트 DB ID를 입력하세요."); return; }
+    if (!r) { setError("독서기록 DB ID를 입력하세요."); return; }
+    finalize({ token: t, notesDatabaseId: n, recordsDatabaseId: r, ...DEFAULT_CONFIG });
   }
 
   function handleCopy() {
     void navigator.clipboard.writeText(embedUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopied(true); setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  if (step === "manual") {
+    return (
+      <div style={styles.overlay}>
+        <form onSubmit={handleManual} style={styles.card}>
+          <button type="button" style={styles.backBtn} onClick={() => { setStep("input"); setError(""); }}>← 뒤로</button>
+          <h2 style={styles.title}>DB ID 직접 입력</h2>
+          <p style={styles.subtitle}>
+            Notion DB 페이지를 열고 URL에서 ID를 복사하세요.<br />
+            예: notion.so/…/<strong>388bde7718aa…</strong>?v=…
+          </p>
+          <label style={styles.label}>Notion 통합 토큰 <span style={styles.required}>*</span></label>
+          <input style={styles.input} type="password" placeholder="secret_..." value={token} onChange={e => setToken(e.target.value)} autoComplete="off" />
+          <label style={styles.label}>독서노트 DB ID <span style={styles.required}>*</span></label>
+          <input style={styles.input} placeholder="388bde77..." value={notesDatabaseId} onChange={e => setNotesDatabaseId(e.target.value)} autoComplete="off" />
+          <label style={styles.label}>독서기록 DB ID <span style={styles.required}>*</span></label>
+          <input style={styles.input} placeholder="63d0943a..." value={recordsDatabaseId} onChange={e => setRecordsDatabaseId(e.target.value)} autoComplete="off" />
+          {error && <p style={styles.error}>{error}</p>}
+          <button type="submit" style={styles.submit}>시작하기</button>
+        </form>
+      </div>
+    );
   }
 
   if (step === "embed") {
@@ -103,7 +120,7 @@ export function SetupScreen({ onDone }: Props) {
 
   return (
     <div style={styles.overlay}>
-      <form onSubmit={(e) => { void handleSubmit(e); }} style={styles.card}>
+      <form onSubmit={(e) => { void handleAuto(e); }} style={styles.card}>
         <h2 style={styles.title}>독서노트 위젯 설정</h2>
         <p style={styles.subtitle}>
           Notion 통합 토큰을 입력하면 DB를 자동으로 연결합니다.
@@ -122,7 +139,15 @@ export function SetupScreen({ onDone }: Props) {
           disabled={status === "loading"}
         />
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && (
+          <div style={{ background: "#FFF2F2", borderRadius: 10, padding: "10px 14px" }}>
+            <p style={styles.error}>{error}</p>
+            <button type="button" style={{ color: "#0A84FF", background: "none", border: "none", fontSize: 13, cursor: "pointer", padding: "6px 0 0" }}
+              onClick={() => { setError(""); setStep("manual"); }}>
+              DB ID를 직접 입력할게요 →
+            </button>
+          </div>
+        )}
 
         <button type="submit" style={styles.submit} disabled={status === "loading"}>
           {status === "loading" ? "DB 검색 중..." : "시작하기"}
@@ -199,5 +224,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#F5F5F7", borderRadius: 12, padding: "14px 16px"
   },
   helpTitle: { margin: "0 0 6px", fontSize: 12, fontWeight: 700, color: "#3C3C43" },
-  helpList: { margin: 0, paddingLeft: 18, fontSize: 12, color: "#6C6C70", lineHeight: 1.8 }
+  helpList: { margin: 0, paddingLeft: 18, fontSize: 12, color: "#6C6C70", lineHeight: 1.8 },
+  backBtn: { background: "none", border: "none", color: "#0A84FF", fontSize: 14, cursor: "pointer", padding: "0 0 4px", textAlign: "left" as const }
 };
