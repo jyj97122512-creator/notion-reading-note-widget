@@ -9,9 +9,10 @@ export async function POST(request: NextRequest) {
   try {
     const notion = createNotionClient(token);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (notion as any).search({ filter: { value: 'database', property: 'object' }, page_size: 100 });
+    const result = await (notion as any).search({ page_size: 100 });
 
-    const dbs = result.results as Array<{ id: string; title?: Array<{ plain_text: string }> }>;
+    const dbs = (result.results as Array<{ id: string; object: string; title?: Array<{ plain_text: string }> }>)
+      .filter((r) => r.object === 'database');
     const find = (name: string) => dbs.find((db) => db.title?.some((t) => t.plain_text.includes(name)));
 
     const notesDb = find('독서노트');
