@@ -9,6 +9,14 @@ interface Props {
 
 type Step = "input" | "manual" | "embed";
 
+function extractDbId(input: string): string {
+  const s = input.trim();
+  // Extract UUID from Notion URL (e.g. https://notion.so/.../388bde77... or /p/388bde77...)
+  const match = s.match(/([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  if (match) return match[1].replace(/-/g, "");
+  return s.replace(/-/g, "");
+}
+
 export function SetupScreen({ onDone }: Props) {
   const [step, setStep] = useState<Step>("input");
   const [token, setToken] = useState("");
@@ -43,8 +51,8 @@ export function SetupScreen({ onDone }: Props) {
   function handleManual(e: React.FormEvent) {
     e.preventDefault();
     const t = token.trim();
-    const n = notesDatabaseId.trim().replace(/-/g, "");
-    const r = recordsDatabaseId.trim().replace(/-/g, "");
+    const n = extractDbId(notesDatabaseId);
+    const r = extractDbId(recordsDatabaseId);
     if (!t) { setError("Notion 통합 토큰을 입력하세요."); return; }
     if (!n) { setError("독서노트 DB ID를 입력하세요."); return; }
     if (!r) { setError("독서기록 DB ID를 입력하세요."); return; }
