@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createNotionClient, getNotionConfig, pageToMemo, buildCreateMemoPayload } from '@/lib/notion';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { createNotionClient, getNotionConfig, pageToMemo, buildCreateMemoPayload, type MemoType } from '@/lib/notion';
 import { extractConfig } from '@/lib/requestConfig';
 
 export async function GET(request: NextRequest) {
@@ -29,11 +29,11 @@ export async function POST(request: NextRequest) {
     const config = getNotionConfig(userConfig);
     const payload = buildCreateMemoPayload({
       databaseId: config.notesDatabaseId,
+      titleProperty: config.noteTitleProperty,
       relationProperty: config.noteRelationProperty,
       typeProperty: config.noteTypeProperty,
-      statusProperty: config.noteStatusProperty,
       text: body.text,
-      type: body.type,
+      type: body.type as MemoType,
       bookId: body.bookId,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

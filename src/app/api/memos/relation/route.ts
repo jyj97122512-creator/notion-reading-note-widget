@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { createNotionClient, buildRelationUpdatePayload, pageToMemo } from '@/lib/notion';
 import { extractConfig } from '@/lib/requestConfig';
 
@@ -14,7 +14,6 @@ export async function PATCH(request: NextRequest) {
       page_id: memoId,
       ...buildRelationUpdatePayload({
         relationProperty: userConfig.noteRelationProperty,
-        statusProperty: userConfig.noteStatusProperty,
         bookId,
       }),
     } as any);

@@ -6,16 +6,16 @@ export interface WidgetConfig {
   recordsDatabaseId: string;
   recordStatusProperty: string;
   currentReadingStatus: string;
+  noteTitleProperty: string;
   noteTypeProperty: string;
-  noteStatusProperty: string;
   noteRelationProperty: string;
 }
 
 export const DEFAULT_CONFIG: Omit<WidgetConfig, "token" | "notesDatabaseId" | "recordsDatabaseId"> = {
   recordStatusProperty: "읽기 상태",
   currentReadingStatus: "읽는중",
+  noteTitleProperty: "이름",
   noteTypeProperty: "유형",
-  noteStatusProperty: "상태",
   noteRelationProperty: "독서기록"
 };
 
@@ -64,8 +64,8 @@ export function configToHeaders(config: WidgetConfig): Record<string, string> {
     "x-records-db-id": config.recordsDatabaseId,
     "x-status-prop": encodeURIComponent(config.recordStatusProperty),
     "x-status-value": encodeURIComponent(config.currentReadingStatus),
+    "x-title-prop": encodeURIComponent(config.noteTitleProperty),
     "x-type-prop": encodeURIComponent(config.noteTypeProperty),
-    "x-note-status-prop": encodeURIComponent(config.noteStatusProperty),
     "x-relation-prop": encodeURIComponent(config.noteRelationProperty)
   };
 }

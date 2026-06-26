@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+﻿import { NextRequest } from 'next/server';
 import type { UserConfig } from './notion';
 
 export function extractConfig(request: NextRequest): UserConfig {
@@ -17,8 +17,8 @@ export function extractConfig(request: NextRequest): UserConfig {
     recordsDatabaseId,
     recordStatusProperty: dec(request.headers.get('x-status-prop')) || '읽기 상태',
     currentReadingStatus: dec(request.headers.get('x-status-value')) || '읽는중',
+    noteTitleProperty: dec(request.headers.get('x-title-prop')) || '이름',
     noteTypeProperty: dec(request.headers.get('x-type-prop')) || '유형',
-    noteStatusProperty: dec(request.headers.get('x-note-status-prop')) || '상태',
     noteRelationProperty: dec(request.headers.get('x-relation-prop')) || '독서기록',
   };
 }
