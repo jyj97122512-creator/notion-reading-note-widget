@@ -1,17 +1,19 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BookSidebar } from '@/components/BookSidebar';
 import { ChatTimeline } from '@/components/ChatTimeline';
 import { Composer } from '@/components/Composer';
 import { SetupScreen } from '@/components/SetupScreen';
 import { StatusBanner } from '@/components/StatusBanner';
 import { NotionClient, type Book, type Memo } from '@/api/notionClient';
-import { loadConfig, saveConfig, clearConfig, configFromEmbedHash } from '@/config';
+import { loadConfig, saveConfig, clearConfig, decodeEmbedParam } from '@/config';
 import type { WidgetConfig } from '@/config';
 import '../../styles.css';
 
-export default function WidgetPage() {
+function WidgetContent() {
+  const searchParams = useSearchParams();
   const [config, setConfig] = useState<WidgetConfig | null>(null);
   const [ready, setReady] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
@@ -22,16 +24,17 @@ export default function WidgetPage() {
   const [statusMessage, setStatusMessage] = useState('로딩 중...');
 
   useEffect(() => {
-    const hashConfig = configFromEmbedHash(window.location.hash);
-    if (hashConfig) {
-      saveConfig(hashConfig);
+    const c = searchParams.get('c');
+    const queryConfig = c ? decodeEmbedParam(c) : null;
+    if (queryConfig) {
+      saveConfig(queryConfig);
       history.replaceState(null, '', window.location.pathname);
-      setConfig(hashConfig);
+      setConfig(queryConfig);
     } else {
       setConfig(loadConfig());
     }
     setReady(true);
-  }, []);
+  }, [searchParams]);
 
   const client = useMemo(() => config ? new NotionClient(config) : null, [config]);
 
@@ -81,6 +84,8 @@ export default function WidgetPage() {
 
   const selectedBookTitle = selectedBookId ? books.find((b) => b.id === selectedBookId)?.title : 'All Notes';
 
+  void visibleMemos;
+
   return (
     <main className="widget-shell" aria-label="독서노트 위젯">
       <BookSidebar books={books} selectedBookId={selectedBookId} draggedMemoId={draggedMemoId}
@@ -101,6 +106,14 @@ export default function WidgetPage() {
         <Composer onSubmit={createMemo} />
       </section>
     </main>
+  );
+}
+
+export default function WidgetPage() {
+  return (
+    <Suspense fallback={null}>
+      <WidgetContent />
+    </Suspense>
   );
 }
 
