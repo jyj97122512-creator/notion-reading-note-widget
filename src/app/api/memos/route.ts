@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
       database_id: config.notesDatabaseId,
       sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
     });
-    return NextResponse.json(result.results.map((p: any) => pageToMemo(p, userConfig)));
+    const memos = (result.results as any[])
+      .map((p) => pageToMemo(p, userConfig))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return NextResponse.json(memos);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Notion request failed';
     return NextResponse.json({ error: msg }, { status: msg.includes('Missing') ? 400 : 500 });
