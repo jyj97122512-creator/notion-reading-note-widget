@@ -18,7 +18,7 @@ export function BookSidebar({
 }: BookSidebarProps) {
   return (
     <aside className="sidebar-panel" aria-label="현재 읽는 책">
-      <div className="sidebar-title">Reading</div>
+      <div className="sidebar-title">책 목록</div>
       <div className="book-list">
         {books.map((book) => (
           <button
