@@ -162,6 +162,7 @@ textarea {
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
+  min-height: 0;
   padding: 8px 2px 14px;
 }
 
