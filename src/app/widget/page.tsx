@@ -89,8 +89,13 @@ function WidgetContent() {
 
   void visibleMemos;
 
+  function handleWheel(e: React.WheelEvent) {
+    const timeline = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.timeline');
+    if (timeline) timeline.scrollTop += e.deltaY;
+  }
+
   return (
-    <main className="widget-shell" aria-label="독서노트 위젯">
+    <main className="widget-shell" aria-label="독서노트 위젯" onWheel={handleWheel}>
       <BookSidebar books={books} selectedBookId={selectedBookId} draggedMemoId={draggedMemoId}
         onSelectBook={setSelectedBookId} onDropMemo={(id) => { void linkMemo(id); }} />
       <section className="chat-panel">
