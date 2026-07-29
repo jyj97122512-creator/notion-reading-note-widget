@@ -164,9 +164,26 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
+  overflow-y: scroll;
   min-height: 0;
   padding: 8px 2px 14px;
+}
+
+.timeline::-webkit-scrollbar {
+  width: 4px;
+}
+
+.timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline::-webkit-scrollbar-thumb {
+  background: rgba(60, 60, 67, 0.22);
+  border-radius: 2px;
+}
+
+.timeline::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 60, 67, 0.4);
 }
 
 .date-pill {
