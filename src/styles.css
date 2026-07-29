@@ -216,6 +216,64 @@ textarea {
   white-space: pre-wrap;
 }
 
+
+.bubble-text {
+  margin: 0;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.bubble-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.bubble-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.bubble-edit-btn {
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+}
+
+.bubble-cancel {
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  opacity: 0.8;
+}
+
+.bubble-save {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0a84ff;
+}
+
+.bubble-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .memo-bubble footer {
   margin-top: 6px;
   font-size: 11px;

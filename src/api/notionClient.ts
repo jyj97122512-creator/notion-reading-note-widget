@@ -38,4 +38,10 @@ export class NotionClient {
     if (!res.ok) throw new Error(data.error ?? 'fetch failed');
     return data;
   }
+
+  async updateMemo(memoId: string, text: string): Promise<void> {
+    const res = await fetch(`/api/memos/${memoId}`, { method: 'PATCH', headers: this.headers, body: JSON.stringify({ text }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'fetch failed');
+  }
 }

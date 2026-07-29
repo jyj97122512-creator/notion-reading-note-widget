@@ -110,7 +110,12 @@ function WidgetContent() {
           </div>
         </header>
         <ChatTimeline books={books} memos={memos.map(m => ({ ...m, type: m.type as any, status: m.status as any }))}
-          onDragStart={setDraggedMemoId} onDragEnd={() => setDraggedMemoId(null)} />
+          onDragStart={setDraggedMemoId} onDragEnd={() => setDraggedMemoId(null)}
+          onEdit={async (memoId, newText) => {
+            if (!client) return;
+            await client.updateMemo(memoId, newText);
+            setMemos(prev => prev.map(m => m.id === memoId ? { ...m, text: newText } : m));
+          }} />
         <Composer onSubmit={createMemo} />
       </section>
     </main>
