@@ -117,13 +117,15 @@ textarea {
 }
 
 .chat-panel {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  overflow: hidden;
   padding: 16px;
 }
 
 .chat-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -161,6 +163,7 @@ textarea {
 }
 
 .timeline {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -231,6 +234,7 @@ textarea {
 }
 
 .composer {
+  flex-shrink: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) 36px;
   align-items: end;
