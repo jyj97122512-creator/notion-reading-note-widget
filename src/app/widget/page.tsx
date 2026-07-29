@@ -79,7 +79,13 @@ function WidgetContent() {
     }
   }
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <main className="widget-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: '#8e8e93', fontSize: 14 }}>로딩 중…</span>
+      </main>
+    );
+  }
 
   if (!config) {
     return <SetupScreen onDone={() => { saveConfig(loadConfig()!); setConfig(loadConfig()); }} />;
