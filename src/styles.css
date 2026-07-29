@@ -21,8 +21,7 @@ textarea {
 .widget-shell {
   display: grid;
   grid-template-columns: 128px minmax(0, 1fr);
-  min-height: 460px;
-  max-height: 620px;
+  height: 620px;
   overflow: hidden;
   border: 1px solid rgba(60, 60, 67, 0.18);
   border-radius: 24px;
