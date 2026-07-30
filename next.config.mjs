@@ -3,8 +3,11 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/widget',
-        headers: [{ key: 'Content-Security-Policy', value: "frame-ancestors *" }],
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *" },
+        ],
       },
     ];
   },
