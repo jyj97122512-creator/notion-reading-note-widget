@@ -1,68 +1,124 @@
-import { decodeEmbedParam } from '@/config';
-import { createNotionClient, getNotionConfig, pageToBook, pageToMemo } from '@/lib/notion';
-import { SetupScreenWrapper } from '@/components/SetupScreenWrapper';
-import { WidgetShell } from '@/components/WidgetShell';
-import type { Book, Memo } from '@/lib/notion';
+'use client';
+
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { BookSidebar } from '@/components/BookSidebar';
+import { ChatTimeline } from '@/components/ChatTimeline';
+import { Composer } from '@/components/Composer';
+import { SetupScreen } from '@/components/SetupScreen';
+import { StatusBanner } from '@/components/StatusBanner';
+import { NotionClient, type Book, type Memo } from '@/api/notionClient';
+import { loadConfig, saveConfig, clearConfig, decodeEmbedParam } from '@/config';
+import type { WidgetConfig } from '@/config';
 import '../../styles.css';
 
-export const dynamic = 'force-dynamic';
+function WidgetContent() {
+  const searchParams = useSearchParams();
+  const [config, setConfig] = useState<WidgetConfig | null>(null);
+  const [ready, setReady] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [memos, setMemos] = useState<Memo[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [draggedMemoId, setDraggedMemoId] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'loading' | 'saving' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('로딩 중...');
 
-export default async function WidgetPage({
-  searchParams,
-}: {
-  searchParams: { c?: string };
-}) {
-  const c = searchParams.c;
+  useEffect(() => {
+    const c = searchParams.get('c');
+    if (c) {
+      const queryConfig = decodeEmbedParam(c);
+      if (queryConfig) {
+        setConfig(queryConfig);
+        setReady(true);
+        return;
+      }
+    }
+    setConfig(loadConfig());
+    setReady(true);
+  }, [searchParams]);
 
-  if (!c) {
-    return <SetupScreenWrapper />;
+  const client = useMemo(() => config ? new NotionClient(config) : null, [config]);
+
+  useEffect(() => {
+    if (!client) return;
+    setSyncStatus('loading');
+    Promise.all([client.listBooks(), client.listMemos()])
+      .then(([b, m]) => { setBooks(b); setMemos(m); setSyncStatus('idle'); setStatusMessage('동기화됨'); })
+      .catch((err: unknown) => { setSyncStatus('error'); setStatusMessage(err instanceof Error ? err.message : '로드 실패'); });
+  }, [client]);
+
+  async function createMemo(text: string, type: string): Promise<boolean> {
+    if (!client) return false;
+    setSyncStatus('saving');
+    try {
+      const memo = await client.createMemo({ text, type, bookId: selectedBookId });
+      setMemos((prev) => [...prev, memo]);
+      setSyncStatus('idle'); setStatusMessage('저장됨');
+      return true;
+    } catch (err) {
+      setSyncStatus('error'); setStatusMessage(err instanceof Error ? err.message : '저장 실패');
+      return false;
+    }
   }
 
-  const config = decodeEmbedParam(c);
+  async function linkMemo(bookId: string) {
+    if (!draggedMemoId || !client) return;
+    setDraggedMemoId(null);
+    try {
+      const updated = await client.linkMemoToBook({ memoId: draggedMemoId, bookId });
+      setMemos((prev) => prev.map((m) => m.id === updated.id ? updated : m));
+    } catch (err) {
+      setSyncStatus('error'); setStatusMessage(err instanceof Error ? err.message : '연결 실패');
+    }
+  }
+
+  function handleWheel(e: React.WheelEvent) {
+    const timeline = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.timeline');
+    if (timeline) timeline.scrollTop += e.deltaY;
+  }
+
+  if (!ready) return null;
+
   if (!config) {
-    return (
-      <main className="widget-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#ff3b30', fontSize: 14 }}>설정 오류. URL을 확인하세요.</span>
-      </main>
-    );
+    return <SetupScreen onDone={() => { saveConfig(loadConfig()!); setConfig(loadConfig()); }} />;
   }
 
-  let books: Book[] = [];
-  let memos: Memo[] = [];
-  let initialError = '';
-
-  try {
-    const notion = createNotionClient(config.token);
-    const nc = getNotionConfig(config);
-
-    const [booksRes, memosRes] = await Promise.all([
-      (notion as any).databases.query({
-        database_id: nc.recordsDatabaseId,
-        filter: {
-          property: nc.recordStatusProperty,
-          select: { equals: nc.currentReadingStatus },
-        },
-        page_size: 20,
-      }),
-      (notion as any).databases.query({
-        database_id: nc.notesDatabaseId,
-        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-        page_size: 50,
-      }),
-    ]);
-
-    books = (booksRes.results as any[]).map(pageToBook);
-    memos = (memosRes.results as any[]).map((p) => pageToMemo(p, config));
-  } catch (e) {
-    initialError = e instanceof Error ? e.message : '로드 실패';
-  }
+  const selectedBookTitle = selectedBookId ? books.find((b) => b.id === selectedBookId)?.title : 'All Notes';
 
   return (
-    <WidgetShell
-      config={config}
-      initialBooks={books}
-      initialMemos={memos}
-      initialError={initialError}
-    />
+    <main className="widget-shell" aria-label="독서노트 위젯" onWheel={handleWheel}>
+      <BookSidebar books={books} selectedBookId={selectedBookId} draggedMemoId={draggedMemoId}
+        onSelectBook={setSelectedBookId} onDropMemo={(id) => { void linkMemo(id); }} />
+      <section className="chat-panel">
+        <header className="chat-header">
+          <div>
+            <span className="eyebrow">독서노트</span>
+            <h1>{selectedBookTitle}</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StatusBanner message={statusMessage} tone={syncStatus} />
+            <button style={resetBtn} title="설정 초기화" onClick={() => { clearConfig(); setConfig(null); }}>⚙️</button>
+          </div>
+        </header>
+        <ChatTimeline books={books} memos={memos.map(m => ({ ...m, type: m.type as any, status: m.status as any }))}
+          onDragStart={setDraggedMemoId} onDragEnd={() => setDraggedMemoId(null)}
+          onEdit={async (memoId, newText) => {
+            if (!client) return;
+            await client.updateMemo(memoId, newText);
+            setMemos(prev => prev.map(m => m.id === memoId ? { ...m, text: newText } : m));
+          }} />
+        <Composer onSubmit={createMemo} />
+      </section>
+    </main>
   );
 }
+
+export default function WidgetPage() {
+  return (
+    <Suspense fallback={null}>
+      <WidgetContent />
+    </Suspense>
+  );
+}
+
+const resetBtn: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, padding: 4, opacity: 0.5 };
