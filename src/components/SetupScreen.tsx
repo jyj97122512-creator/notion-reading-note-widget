@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { saveConfig, DEFAULT_CONFIG, buildEmbedUrl, buildImageUrl, type WidgetConfig } from "../config";
+import { saveConfig, DEFAULT_CONFIG, buildEmbedUrl, type WidgetConfig } from "../config";
 
 interface Props {
   onDone: () => void;
@@ -25,14 +25,11 @@ export function SetupScreen({ onDone }: Props) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const [copied, setCopied] = useState(false);
-  const [copiedImage, setCopiedImage] = useState(false);
 
   function finalize(config: WidgetConfig) {
     saveConfig(config);
     setEmbedUrl(buildEmbedUrl(config));
-    setImageUrl(buildImageUrl(config));
     setStep("embed");
   }
 
@@ -106,35 +103,15 @@ export function SetupScreen({ onDone }: Props) {
           </div>
 
           <button style={styles.copyBtn} onClick={handleCopy}>
-            {copied ? "✓ 복사됨" : "PC용 링크 복사"}
+            {copied ? "✓ 복사됨" : "링크 복사"}
           </button>
 
           <div style={styles.helpBox}>
-            <p style={styles.helpTitle}>💻 PC Notion 임베드 방법</p>
+            <p style={styles.helpTitle}>Notion 삽입 방법 (PC · 모바일 공통)</p>
             <ol style={styles.helpList}>
-              <li>Notion 페이지에서 <code>/embed</code> 입력</li>
-              <li>위 링크 붙여넣기 → Enter</li>
-            </ol>
-          </div>
-
-          <div style={{ ...styles.helpBox, marginTop: 4, background: '#F0F8FF' }}>
-            <p style={{ ...styles.helpTitle, color: '#0A84FF' }}>📱 모바일 Notion용 (이미지 뷰)</p>
-            <div style={{ ...styles.urlBox, margin: '6px 0' }}>
-              <span style={styles.urlText}>{imageUrl}</span>
-            </div>
-            <button
-              style={{ ...styles.copyBtn, background: '#34C759', fontSize: 13, padding: '8px' }}
-              onClick={() => {
-                void navigator.clipboard.writeText(imageUrl).then(() => {
-                  setCopiedImage(true); setTimeout(() => setCopiedImage(false), 2000);
-                });
-              }}
-            >
-              {copiedImage ? "✓ 복사됨" : "모바일용 링크 복사"}
-            </button>
-            <ol style={{ ...styles.helpList, marginTop: 6 }}>
               <li>Notion 페이지에서 <code>/image</code> 입력</li>
-              <li>모바일용 링크 붙여넣기 → Enter</li>
+              <li>위 링크 붙여넣기 → Enter</li>
+              <li>이미지를 클릭하면 인터랙티브 위젯이 열립니다</li>
             </ol>
           </div>
 
