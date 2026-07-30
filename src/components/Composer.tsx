@@ -1,5 +1,5 @@
 import { SendHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MemoType } from "../types";
 
 interface ComposerProps {
@@ -9,6 +9,19 @@ interface ComposerProps {
 export function Composer({ onSubmit }: ComposerProps) {
   const [text, setText] = useState("");
   const [type, setType] = useState<MemoType>("thought");
+  const passageRef = useRef<HTMLButtonElement>(null);
+  const thoughtRef = useRef<HTMLButtonElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const activeBtn = type === "passage" ? passageRef.current : thoughtRef.current;
+    const passageBtn = passageRef.current;
+    const slider = sliderRef.current;
+    if (!activeBtn || !passageBtn || !slider) return;
+    slider.style.width = `${activeBtn.offsetWidth}px`;
+    slider.style.transform =
+      type === "passage" ? "translateX(0)" : `translateX(${passageBtn.offsetWidth}px)`;
+  }, [type]);
 
   async function submit() {
     const trimmed = text.trim();
@@ -26,10 +39,11 @@ export function Composer({ onSubmit }: ComposerProps) {
       }}
     >
       <div className="type-toggle" aria-label="메모 유형">
-        <button type="button" className={type === "passage" ? "active" : ""} onClick={() => setType("passage")}>
+        <div className="type-toggle-slider" ref={sliderRef} />
+        <button type="button" ref={passageRef} className={type === "passage" ? "active" : ""} onClick={() => setType("passage")}>
           구절
         </button>
-        <button type="button" className={type === "thought" ? "active" : ""} onClick={() => setType("thought")}>
+        <button type="button" ref={thoughtRef} className={type === "thought" ? "active" : ""} onClick={() => setType("thought")}>
           생각
         </button>
       </div>
