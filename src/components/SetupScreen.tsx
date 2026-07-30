@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { saveConfig, DEFAULT_CONFIG, buildImageUrl, type WidgetConfig } from "../config";
+import { saveConfig, DEFAULT_CONFIG, buildEmbedUrl, type WidgetConfig } from "../config";
 
 interface Props {
   onDone: () => void;
@@ -29,7 +29,7 @@ export function SetupScreen({ onDone }: Props) {
 
   function finalize(config: WidgetConfig) {
     saveConfig(config);
-    setEmbedUrl(buildImageUrl(config));
+    setEmbedUrl(buildEmbedUrl(config));
     setStep("embed");
   }
 
@@ -107,12 +107,11 @@ export function SetupScreen({ onDone }: Props) {
           </button>
 
           <div style={styles.helpBox}>
-            <p style={styles.helpTitle}>Notion 삽입 방법 (PC · 모바일 동일)</p>
+            <p style={styles.helpTitle}>Notion 삽입 방법 (PC · 모바일 공통)</p>
             <ol style={styles.helpList}>
-              <li>Notion 페이지에서 <code>/image</code> 입력</li>
+              <li>Notion 페이지에서 <code>/embed</code> 입력</li>
               <li>위 링크 붙여넣기 → Enter</li>
-              <li>PC와 모바일 모두 독서노트 미리보기가 표시됩니다</li>
-              <li>이미지 클릭 시 인터랙티브 위젯이 열립니다</li>
+              <li>PC와 모바일 모두 위젯이 표시됩니다</li>
             </ol>
           </div>
 
@@ -120,7 +119,7 @@ export function SetupScreen({ onDone }: Props) {
             ⚠️ 이 링크에는 Notion 토큰이 포함됩니다. 신뢰할 수 있는 사람과만 공유하세요.
           </p>
 
-          <button style={styles.startBtn} onClick={onDone}>
+          <button style={styles.startBtn} onClick={() => { window.location.href = embedUrl; }}>
             위젯 시작하기
           </button>
         </div>
