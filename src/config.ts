@@ -57,6 +57,10 @@ export function buildEmbedUrl(config: WidgetConfig): string {
   return `${window.location.origin}/widget?c=${configToEmbedParam(config)}`;
 }
 
+export function buildImageUrl(config: WidgetConfig): string {
+  return `${window.location.origin}/widget/image?c=${configToEmbedParam(config)}`;
+}
+
 export function configToHeaders(config: WidgetConfig): Record<string, string> {
   return {
     "Authorization": `Bearer ${config.token}`,
