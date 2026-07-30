@@ -1,6 +1,6 @@
 import { decodeEmbedParam } from '@/config';
 import { createNotionClient, getNotionConfig, pageToBook, pageToMemo } from '@/lib/notion';
-import { SetupScreen } from '@/components/SetupScreen';
+import { SetupScreenWrapper } from '@/components/SetupScreenWrapper';
 import { WidgetShell } from '@/components/WidgetShell';
 import type { Book, Memo } from '@/lib/notion';
 import '../../styles.css';
@@ -15,7 +15,7 @@ export default async function WidgetPage({
   const c = searchParams.c;
 
   if (!c) {
-    return <SetupScreen onDone={() => {}} />;
+    return <SetupScreenWrapper />;
   }
 
   const config = decodeEmbedParam(c);
